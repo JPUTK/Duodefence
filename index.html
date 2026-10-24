@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rift Defense</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>RIFT DEFENSE</h1>
+  <div class="sub">CO-OP · DEFEND EACH OTHER ACROSS THE RIFT</div>
+  <canvas id="game" width="960" height="690"></canvas>
+  <div class="controls">
+    <button id="callWave">Call wave early (+bonus)</button>
+    <button id="pause">Pause</button>
+    <button id="speed">Speed 1x</button>
+    <button id="restart">Restart</button>
+  </div>
+  <div class="help">
+    <h3>THE RIFT</h3>
+    <span class="p1">Player 1</span> builds on the left, <span class="p2">Player 2</span> on the right.
+    The lane on <b>your</b> side carries drones heading for <b>your ally's</b> core, and your turrets only fire on those.
+    If either core falls, you both lose.
+    <h3>TWO DIFFERENT FRONTS</h3>
+    <span class="p1">Player 1</span> guards the long, winding <b>Swarm Lane</b>: lots of fast, fragile drones, ending in a Brood Carrier that bursts into scouts.
+    <span class="p2">Player 2</span> guards the short <b>Heavy Lane</b>: fewer, slower, armored drones, ending in a Juggernaut.
+    Every 4th wave a <b>surge</b> hits one lane (you get a warning a wave ahead). That's when your ally should <b>GIVE</b> you credits.
+    <h3>CONTROLS</h3>
+    Pick a turret in your panel (<span class="p1">P1:</span> <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> · <span class="p2">P2:</span> <kbd>8</kbd><kbd>9</kbd><kbd>0</kbd>),
+    then click open ground on your side. Click a turret to upgrade it, right-click to sell.
+    <kbd>Space</kbd> pauses, <kbd>N</kbd> calls the next wave early, <kbd>Esc</kbd> cancels a merge.
+    <h3>XP &amp; MERGING</h3>
+    Turrets earn XP for the damage they deal. A level 3 turret with full XP becomes <span class="gold">ELITE</span> (gold ring).
+    Click an elite turret, then click a different-type elite turret of yours nearby to merge them into a hybrid for 200 credits.
+    The second turret's spot is freed up for a new build.
+    <b>Laser + Plasma = Ion Lance</b> (piercing beam), <b>Laser + Cryo = Frost Lance</b> (slows and makes drones brittle),
+    <b>Plasma + Cryo = Nova Mortar</b> (frost bombs that leave freezing fields).
+  </div>
+
+  <!-- Order matters: later files use things defined in earlier ones -->
+  <script src="js/config.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
