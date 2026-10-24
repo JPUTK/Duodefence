@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My First Game</title>
+  <style>
+    body { background: #222; color: white; text-align: center; font-family: sans-serif; }
+    canvas { background: #000; border: 2px solid #fff; }
+  </style>
+</head>
+<body>
+  <h1>My First Game</h1>
+  <canvas id="game" width="400" height="300"></canvas>
+  <p>Use the arrow keys to move the square.</p>
+  <script>
+    const ctx = document.getElementById("game").getContext("2d");
+    let x = 180, y = 130;
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft")  x -= 10;
+      if (e.key === "ArrowRight") x += 10;
+      if (e.key === "ArrowUp")    y -= 10;
+      if (e.key === "ArrowDown")  y += 10;
+    });
+    function draw() {
+      ctx.clearRect(0, 0, 400, 300);
+      ctx.fillStyle = "lime";
+      ctx.fillRect(x, y, 40, 40);
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>
