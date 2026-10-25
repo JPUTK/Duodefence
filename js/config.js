@@ -29,38 +29,6 @@ const DIFFICULTIES = {
 };
 const DIFF_ORDER = ["easy", "normal", "hard", "nightmare"];
 
-// Lane A: long serpentine through Player 1's side, ends at Player 2's core.
-const PATH_A = [[60,-40],[60,500],[180,500],[180,100],[300,100],[300,540],[600,540]];
-// Lane B: short, direct route through Player 2's side, ends at Player 1's core.
-const PATH_B = [[900,640],[900,440],[700,440],[700,250],[860,250],[860,80],[410,80]];
-
-const LANES = [
-  { path: PATH_A, guard: 0, target: 1, label: "SWARM LANE", labelX: 82, labelY: 22, align: "left" },
-  { path: PATH_B, guard: 1, target: 0, label: "HEAVY LANE", labelX: 878, labelY: 588, align: "right" }
-];
-LANES.forEach(l => {
-  l.segs = []; l.len = 0;
-  for (let i = 0; i < l.path.length - 1; i++) {
-    const [ax, ay] = l.path[i], [bx, by] = l.path[i + 1];
-    const len = Math.hypot(bx - ax, by - ay);
-    l.segs.push({ ax, ay, bx, by, len, start: l.len });
-    l.len += len;
-  }
-});
-
-function pointAt(lane, s) {
-  for (const g of lane.segs) {
-    if (s <= g.start + g.len) {
-      const t = (s - g.start) / g.len;
-      return { x: g.ax + (g.bx - g.ax) * t, y: g.ay + (g.by - g.ay) * t, a: Math.atan2(g.by - g.ay, g.bx - g.ax) };
-    }
-  }
-  const g = lane.segs[lane.segs.length - 1];
-  return { x: g.bx, y: g.by, a: Math.atan2(g.by - g.ay, g.bx - g.ax) };
-}
-
-const CORES = [{ x: 410, y: 80 }, { x: 600, y: 540 }];
-
 // ----- Turret types -----
 const TYPES = {
   laser: {

@@ -6,22 +6,27 @@ let state, speedMul = 1, animT = 0;
 let mouse = { x: -100, y: -100 };
 
 // ----- Difficulty and best waves (saved in the browser) -----
+// Best waves are kept per map and difficulty, keyed like "rift:normal".
 let difficulty = "normal";
-let bests = { easy: 0, normal: 0, hard: 0, nightmare: 0 };
+let bests = {};
 try {
   const d = localStorage.getItem("riftDifficulty");
   if (DIFFICULTIES[d]) difficulty = d;
-  Object.assign(bests, JSON.parse(localStorage.getItem("riftBests") || "{}"));
+  const saved = JSON.parse(localStorage.getItem("riftBests") || "{}");
+  for (const k in saved) bests[k.includes(":") ? k : "rift:" + k] = saved[k]; // older saves had no map
   // carry over a best score saved before difficulty levels existed
   const old = parseInt(localStorage.getItem("riftBest") || "0", 10) || 0;
-  if (old > bests.normal) bests.normal = old;
+  if (old > (bests["rift:normal"] || 0)) bests["rift:normal"] = old;
 } catch (e) {}
-let best = bests[difficulty];
+const bestKey = (mapId = MAP.id, d = difficulty) => mapId + ":" + d;
+let best = bests[bestKey()] || 0;
+function refreshBest() { best = bests[bestKey()] || 0; }
+onMapLoad.push(refreshBest);
 
 function setDifficulty(d) {
   if (!DIFFICULTIES[d]) return;
   difficulty = d;
-  best = bests[d];
+  refreshBest();
   try { localStorage.setItem("riftDifficulty", d); } catch (e) {}
   if (typeof syncSettingsUI === "function") syncSettingsUI();
 }
@@ -34,7 +39,7 @@ function cycleDifficulty(dir) {
 function reset() {
   const D = DIFFICULTIES[difficulty];
   state = {
-    diff: difficulty, D, coreMax: D.core,
+    diff: difficulty, D, coreMax: D.core, mapId: MAP.id,
     players: [
       { credits: D.credits, core: D.core, sel: "laser", mergeSel: null },
       { credits: D.credits, core: D.core, sel: "laser", mergeSel: null }
@@ -120,10 +125,10 @@ function buildWave(w) {
     for (let i = 0; i < n; i++) kinds.push(pr.mix(w, i));
     const weight = kinds.reduce((s, k) => s + KINDS[k].hp, 0);
     const hpBudget = hpUnit * base * mult, rewBudget = rewUnit * base * mult;
-    const q = kinds.map(k => makeSpec(k, hpBudget * KINDS[k].hp / weight, rewBudget * KINDS[k].hp / weight, spd * pr.spd, w));
+    const q = kinds.map(k => makeSpec(k, hpBudget * KINDS[k].hp / weight, rewBudget * KINDS[k].hp / weight, spd * pr.spd * LANES[li].speedScale, w));
     if (w % 5 === 0) {
       const b = KINDS[pr.boss];
-      q.push(makeSpec(pr.boss, hpUnit * b.hp, rewUnit * b.rew, spd * pr.spd, w));
+      q.push(makeSpec(pr.boss, hpUnit * b.hp, rewUnit * b.rew, spd * pr.spd * LANES[li].speedScale, w));
     }
     state.queues[li].push(...q);
     state.intervals[li] = duration / q.length;
@@ -232,8 +237,10 @@ function update(dt) {
         state.over = true;
         Sound.play("gameover");
         Sound.setMode("over");
-        if (state.diff === difficulty && state.wave > best) {
-          best = bests[difficulty] = state.wave;
+        const key = bestKey(state.mapId, state.diff);
+        if (state.wave > (bests[key] || 0)) {
+          bests[key] = state.wave;
+          refreshBest();
           state.newBest = true;
           try { localStorage.setItem("riftBests", JSON.stringify(bests)); } catch (err) {}
         }
