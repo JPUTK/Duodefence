@@ -146,7 +146,7 @@ function drawPortal(x, y) {
 
 function drawCore(i) {
   const { x, y } = CORES[i], c = PCOL[i], p = state.players[i];
-  const pct = p.core / CORE_MAX, pulse = 0.5 + 0.5 * Math.sin(animT * 3 + i);
+  const pct = p.core / state.coreMax, pulse = 0.5 + 0.5 * Math.sin(animT * 3 + i);
 
   ctx.save();
   ctx.translate(x, y);
@@ -346,8 +346,8 @@ function drawPanel(i) {
   ctx.fillText("PLAYER " + (i + 1), P.x + 12, P.y + 24);
   ctx.fillStyle = "#e8ecff"; ctx.font = "700 13px " + FONT;
   ctx.fillText(p.credits + " CR", P.x + 12, P.y + 46);
-  ctx.fillStyle = p.core / CORE_MAX > 0.25 ? "#aab4d8" : "#ff5a5a"; ctx.font = "500 11px " + FONT;
-  ctx.fillText("CORE " + p.core + " / " + CORE_MAX, P.x + 12, P.y + 66);
+  ctx.fillStyle = p.core / state.coreMax > 0.25 ? "#aab4d8" : "#ff5a5a"; ctx.font = "500 11px " + FONT;
+  ctx.fillText("CORE " + p.core + " / " + state.coreMax, P.x + 12, P.y + 66);
 
   panelButtons(i).forEach((b, k) => {
     const isGive = b.type === "give";
@@ -536,6 +536,8 @@ function draw() {
   ctx.globalAlpha = 1;
   ctx.restore(); // end screen shake
 
+  if (screen === "title") { drawTitle(); return; }
+
   // HUD strip
   ctx.fillStyle = "#05070f"; ctx.fillRect(0, FH, W, H - FH);
   ctx.strokeStyle = "#2a3560"; ctx.lineWidth = 1;
@@ -545,8 +547,10 @@ function draw() {
   // Wave readout
   drawCenteredText("WAVE " + state.wave, 22, 14, "#e8ecff", 900);
   const pending = state.queues[0].length + state.queues[1].length;
-  const status = pending ? "INCOMING " + pending : "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s";
+  const status = pending ? "INCOMING " + pending
+    : isFinite(state.nextWaveIn) ? "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s" : "PRACTICE";
   drawCenteredText(status, 38, 10, "rgba(232,236,255,0.7)", 500);
+  if (screen === "playing") drawCenteredText(state.D.label, 52, 8, state.D.color, 700);
 
   drawHover();
 
@@ -557,17 +561,13 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
+  if (screen === "tutorial") drawTutorial();
+
   if (state.paused && !state.over) {
     ctx.fillStyle = "rgba(3,5,12,0.55)"; ctx.fillRect(0, 0, W, FH);
     drawCenteredText("PAUSED", FH / 2, 36, "#e8ecff", 900);
     drawCenteredText("Press Space to resume", FH / 2 + 28, 12, "#9aa5c9", 500);
   }
 
-  if (state.over) {
-    ctx.fillStyle = "rgba(3,5,12,0.8)"; ctx.fillRect(0, 0, W, H);
-    drawCenteredText("CORE BREACHED", FH / 2 - 30, 40, "#ff5a5a", 900);
-    drawCenteredText("You held the line together for " + state.wave + " waves", FH / 2 + 8, 16, "#e8ecff", 500);
-    drawCenteredText("BEST: WAVE " + best, FH / 2 + 34, 13, "#b77bff", 700);
-    drawCenteredText("Click to redeploy", FH / 2 + 64, 12, "#9aa5c9", 500);
-  }
+  if (state.over) drawGameOver();
 }
