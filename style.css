@@ -9,11 +9,45 @@ h1 {
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .sub { font-size: 11px; letter-spacing: 3px; color: #7f8bb3; margin-bottom: 6px; }
+.stage { position: relative; max-width: 960px; margin: 8px auto; }
 canvas {
-  display: block; margin: 8px auto; max-width: 100%;
+  display: block; width: 100%; height: auto;
   border: 1px solid #2a3560; border-radius: 10px; cursor: crosshair;
   box-shadow: 0 0 30px rgba(120, 90, 255, 0.25);
 }
+
+/* ----- Settings panel ----- */
+.settings {
+  position: absolute; inset: 0; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(3, 5, 12, 0.72); backdrop-filter: blur(3px);
+}
+.settings[hidden] { display: none; }
+.settings-card {
+  width: min(460px, 90%); padding: 26px 28px 18px; border-radius: 12px;
+  background: rgba(7, 10, 24, 0.96); border: 1px solid #b77bff;
+  box-shadow: 0 0 30px rgba(154, 92, 255, 0.45);
+}
+.settings-card h2 { margin: 0 0 20px; font-size: 20px; letter-spacing: 4px; color: #ffd34d; }
+.settings .row { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+.settings .row label { width: 92px; text-align: left; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+.settings .row .val { width: 44px; font-size: 12px; color: #9aa5c9; text-align: right; }
+.settings .row.muted label, .settings .row.muted input { opacity: 0.4; }
+.settings input[type=range] { flex: 1; accent-color: #38e1ff; cursor: pointer; }
+.settings button {
+  font-family: "Orbitron", sans-serif; cursor: pointer; border-radius: 6px; letter-spacing: 1px;
+}
+.settings .mute {
+  width: 86px; font-size: 10px; padding: 6px 0;
+  background: rgba(255, 255, 255, 0.05); color: #c6cdea; border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.settings .mute.on { background: rgba(255, 90, 90, 0.18); color: #ff8a8a; border-color: #ff5a5a; }
+.settings .done {
+  margin-top: 12px; padding: 10px 40px; font-size: 14px; font-weight: 900;
+  background: rgba(56, 225, 255, 0.18); color: #fff; border: 2px solid #38e1ff;
+}
+.settings .done:hover { background: rgba(56, 225, 255, 0.32); }
+.settings .hint { font-size: 10px; color: #7f8bb3; margin: 12px 0 0; letter-spacing: 1px; }
 .controls button {
   font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 1px;
   padding: 9px 16px; margin: 4px; border-radius: 6px; cursor: pointer;

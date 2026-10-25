@@ -85,6 +85,7 @@ function startTutorial() {
   tut = { step: 0, doneT: 0 };
   setScreen("tutorial");
   cvs.style.cursor = "crosshair";
+  Sound.setMode("game");
   enterStep();
 }
 
@@ -112,6 +113,7 @@ function updateTutorial(dt) {
     if (tut.doneT <= 0) nextStep();
   } else if (s.check()) {
     tut.doneT = 0.9; // brief pause so players see the checkmark
+    Sound.play("give");
   }
 }
 
@@ -153,6 +155,7 @@ function tutorialClick(x, y) {
   const card = tutCard();
   const b = card.buttons.find(b => inRect(x, y, b));
   if (b) {
+    Sound.play("ui");
     if (b.id === "tut-next") nextStep();
     else if (b.id === "tut-start") startGame();
     else if (b.id === "tut-menu" || b.id === "tut-skip") goToMenu();

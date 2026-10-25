@@ -19,11 +19,13 @@ function startGame() {
   setScreen("playing");
   document.getElementById("pause").textContent = "Pause";
   cvs.style.cursor = "crosshair";
+  Sound.setMode("game");
 }
 
 function goToMenu() {
   startDemo();
   setScreen("title");
+  Sound.setMode("menu");
 }
 
 // Builds a strong pre-made defense on both sides and lets the waves roll,
@@ -95,7 +97,8 @@ function menuButtons() {
   if (screen === "title") {
     return [
       { id: "start", label: "START GAME", x: MID - 130, y: 390, w: 260, h: 52, primary: true },
-      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 456, w: 260, h: 42 }
+      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 456, w: 260, h: 42 },
+      { id: "settings", label: "SETTINGS", x: MID - 130, y: 508, w: 260, h: 42 }
     ];
   }
   if (state.over) {
@@ -113,9 +116,11 @@ function menuButtonAt(x, y) {
 }
 
 function menuAction(id) {
+  Sound.play("ui");
   if (id === "start" || id === "redeploy") startGame();
   else if (id === "menu") goToMenu();
   else if (id === "howto") startTutorial();
+  else if (id === "settings") openSettings();
 }
 
 function drawMenuButton(b) {
@@ -180,8 +185,13 @@ function drawTitle() {
 
   menuButtons().forEach(drawMenuButton);
 
-  if (best > 0) drawCenteredText("BEST: WAVE " + best, 540, 13, "#b77bff", 700);
+  if (best > 0) drawCenteredText("BEST: WAVE " + best, 584, 13, "#b77bff", 700);
   drawCenteredText("2 PLAYERS  ·  SHARED SCREEN  ·  PRESS ENTER TO START", 652, 10, "#7f8bb3", 500);
+  if (Sound.supported && !Sound.unlocked) {
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(animT * 3);
+    drawCenteredText("♪  CLICK ANYWHERE TO ENABLE SOUND", 628, 10, GOLD, 700);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // =====================================================================

@@ -119,6 +119,7 @@ function startWave(early) {
   if (surge >= 0) { text += " · SURGE ON " + LANES[surge].label; color = PCOL[surge]; }
   if (state.wave % 5 === 0) { text += " · BOSSES"; color = HOSTILE; }
   state.banner = { text, color, life: 2.4 };
+  Sound.play(state.wave % 5 === 0 ? "boss" : surge >= 0 ? "surge" : "wave");
 }
 
 function spawnEnemy(li, spec, trav = 0) {
@@ -147,6 +148,7 @@ function hurt(e, dmg, src, pierce) {
     e.dead = true;
     const owner = src ? src.owner : LANES[e.lane].guard;
     state.players[owner].credits += e.rew;
+    Sound.play(e.r > 15 ? "bigkill" : "kill", e.x);
     floater(e.x, e.y - 14, "+" + e.rew, PCOL[owner]);
     burst(e.x, e.y, HOSTILE, e.r > 15 ? 45 : 12);
     if (e.kind === "carrier") {
@@ -194,11 +196,14 @@ function update(dt) {
       e.dead = true;
       const pl = state.players[lane.target];
       pl.core = Math.max(0, pl.core - e.core);
+      Sound.play("corehit", CORES[lane.target].x);
       state.shake = Math.max(state.shake, 6 + e.core * 2);
       burst(e.x, e.y, PCOL[lane.target], 18);
       floater(e.x, e.y - 50, "-" + e.core + " CORE", "#ff5a5a");
       if (pl.core <= 0) {
         state.over = true;
+        Sound.play("gameover");
+        Sound.setMode("over");
         if (state.wave > best) {
           best = state.wave;
           try { localStorage.setItem("riftBest", String(best)); } catch (err) {}
@@ -228,13 +233,16 @@ function update(dt) {
 
     switch (t.type) {
       case "laser":
+        Sound.play("laser", t.x);
         hurt(target, st.dmg, t);
         state.beams.push({ x1: mx, y1: my, x2: target.x, y2: target.y, c: PCOL[t.owner], w: 1 + t.level, life: 0.07 });
         break;
       case "plasma":
+        Sound.play("plasma", t.x);
         state.shots.push({ x: mx, y: my, tgt: target, tx: target.x, ty: target.y, dmg: st.dmg, splash: st.splash, src: t, spd: 360, color: GOLD });
         break;
       case "cryo":
+        Sound.play("cryo", t.x);
         for (const e of inRange) {
           applySlow(e, st.slow, 1.4);
           t.xp = Math.min(XP_ELITE, t.xp + 3); // cryo also learns from slowing
@@ -243,6 +251,7 @@ function update(dt) {
         state.pulses.push({ x: t.x, y: t.y, r0: 12, r1: st.range, life: 0.45, max: 0.45, c: "#9ff3ff" });
         break;
       case "ion": {
+        Sound.play("ion", t.x);
         const ex = t.x + Math.cos(t.angle) * st.range, ey = t.y + Math.sin(t.angle) * st.range;
         for (const e of state.enemies) {
           if (e.dead || LANES[e.lane].guard !== t.owner) continue;
@@ -252,11 +261,13 @@ function update(dt) {
         break;
       }
       case "frost":
+        Sound.play("frost", t.x);
         hurt(target, st.dmg, t);
         if (!target.dead) { applySlow(target, st.slow, 1.2); target.brittleT = 1.5; }
         state.beams.push({ x1: mx, y1: my, x2: target.x, y2: target.y, c: "#9ff3ff", w: 3, life: 0.07 });
         break;
       case "nova":
+        Sound.play("nova", t.x);
         state.shots.push({ x: mx, y: my, tgt: target, tx: target.x, ty: target.y, dmg: st.dmg, splash: st.splash,
           slow: st.slow, fieldDps: st.fieldDps, src: t, spd: 320, color: "#9ff3ff" });
         break;
@@ -277,6 +288,7 @@ function update(dt) {
         hurt(e, s.dmg, s.src);
       }
       burst(s.tx, s.ty, s.color, 16);
+      Sound.play("boom", s.tx);
       state.pulses.push({ x: s.tx, y: s.ty, r0: 6, r1: s.splash, life: 0.25, max: 0.25, c: s.color });
       if (s.fieldDps) state.fields.push({ x: s.tx, y: s.ty, r: 60, life: 2.5, max: 2.5, dps: s.fieldDps, src: s.src });
     } else {
@@ -322,25 +334,27 @@ function update(dt) {
 function build(owner, type, x, y) {
   const p = state.players[owner], T = TYPES[type];
   if (!canBuild(x, y, owner)) return false;
-  if (p.credits < T.cost) { floater(x, y - 10, "NEED " + T.cost, "#ff5a5a"); return false; }
+  if (p.credits < T.cost) { floater(x, y - 10, "NEED " + T.cost, "#ff5a5a"); Sound.play("deny", x); return false; }
   p.credits -= T.cost;
   state.towers.push({ type, owner, level: 1, x, y, cool: 0, flash: 0, angle: owner === 0 ? 0 : Math.PI, spent: T.cost, xp: 0 });
   burst(x, y, PCOL[owner], 12);
+  Sound.play("build", x);
   return true;
 }
 
 function upgrade(t) {
   const p = state.players[t.owner], c = upgradeCost(t);
-  if (p.credits < c) { floater(t.x, t.y - 22, "NEED " + c, "#ff5a5a"); return false; }
+  if (p.credits < c) { floater(t.x, t.y - 22, "NEED " + c, "#ff5a5a"); Sound.play("deny", t.x); return false; }
   p.credits -= c; t.spent += c; t.level++;
   burst(t.x, t.y, PCOL[t.owner], 14);
   floater(t.x, t.y - 22, "LEVEL " + t.level, PCOL[t.owner]);
+  Sound.play("upgrade", t.x);
   return true;
 }
 
 function merge(a, b) {
   const p = state.players[a.owner];
-  if (p.credits < MERGE_COST) { floater(a.x, a.y - 26, "NEED " + MERGE_COST, "#ff5a5a"); return false; }
+  if (p.credits < MERGE_COST) { floater(a.x, a.y - 26, "NEED " + MERGE_COST, "#ff5a5a"); Sound.play("deny", a.x); return false; }
   p.credits -= MERGE_COST;
   const type = hybridFor(a.type, b.type);
   // Beam effect from the absorbed turret into the survivor
@@ -352,6 +366,7 @@ function merge(a, b) {
   burst(a.x, a.y, GOLD, 40);
   state.pulses.push({ x: a.x, y: a.y, r0: 10, r1: 90, life: 0.6, max: 0.6, c: GOLD });
   floater(a.x, a.y - 28, TYPES[type].name + " ONLINE", GOLD);
+  Sound.play("merge", a.x);
   p.mergeSel = null;
   return true;
 }
@@ -363,13 +378,15 @@ function sell(t) {
   state.players.forEach(p => { if (p.mergeSel === t) p.mergeSel = null; });
   burst(t.x, t.y, "#aab4d8", 14);
   floater(t.x, t.y - 14, "+" + refund + " SOLD", PCOL[t.owner]);
+  Sound.play("sell", t.x);
 }
 
 function give(from) {
   const p = state.players[from], to = 1 - from;
-  if (p.credits < GIVE_AMOUNT) { floater(CORES[from].x, CORES[from].y - 52, "NOT ENOUGH", "#ff5a5a"); return; }
+  if (p.credits < GIVE_AMOUNT) { floater(CORES[from].x, CORES[from].y - 52, "NOT ENOUGH", "#ff5a5a"); Sound.play("deny", CORES[from].x); return; }
   p.credits -= GIVE_AMOUNT;
   state.players[to].credits += GIVE_AMOUNT;
   state.gives++;
   floater(CORES[to].x, CORES[to].y - 52, "+" + GIVE_AMOUNT + " FROM ALLY", PCOL[from]);
+  Sound.play("give", CORES[to].x);
 }
