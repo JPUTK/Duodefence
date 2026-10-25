@@ -96,9 +96,12 @@ function updateDemo(dt) {
 function menuButtons() {
   if (screen === "title") {
     return [
-      { id: "start", label: "START GAME", x: MID - 130, y: 390, w: 260, h: 52, primary: true },
-      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 456, w: 260, h: 42 },
-      { id: "settings", label: "SETTINGS", x: MID - 130, y: 508, w: 260, h: 42 }
+      { id: "diff-prev", label: "◀", x: MID - 130, y: 356, w: 36, h: 34, arrow: true },
+      { id: "diff-next", label: "", x: MID - 90, y: 356, w: 180, h: 34, hidden: true },
+      { id: "diff-next", label: "▶", x: MID + 94, y: 356, w: 36, h: 34, arrow: true },
+      { id: "start", label: "START GAME", x: MID - 130, y: 420, w: 260, h: 50, primary: true },
+      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 480, w: 260, h: 40 },
+      { id: "settings", label: "SETTINGS", x: MID - 130, y: 528, w: 260, h: 40 }
     ];
   }
   if (state.over) {
@@ -121,10 +124,25 @@ function menuAction(id) {
   else if (id === "menu") goToMenu();
   else if (id === "howto") startTutorial();
   else if (id === "settings") openSettings();
+  else if (id === "diff-prev") cycleDifficulty(-1);
+  else if (id === "diff-next") cycleDifficulty(1);
 }
 
 function drawMenuButton(b) {
+  if (b.hidden) return;
   const hover = inRect(mouse.x, mouse.y, b);
+  if (b.arrow) {
+    const c = DIFFICULTIES[difficulty].color;
+    ctx.save();
+    ctx.fillStyle = hover ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.03)";
+    ctx.strokeStyle = hover ? c : "rgba(255,255,255,0.25)"; ctx.lineWidth = 1.5;
+    roundRect(ctx, b.x, b.y, b.w, b.h, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = hover ? c : "#c6cdea"; ctx.font = "900 13px " + FONT;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 1);
+    ctx.restore();
+    return;
+  }
   const pulse = 0.5 + 0.5 * Math.sin(animT * 3);
   ctx.save();
   ctx.fillStyle = b.primary
@@ -177,16 +195,24 @@ function drawTitle() {
   // Player legend
   ctx.font = "700 11px " + FONT;
   ctx.textAlign = "right"; ctx.fillStyle = PCOL[0];
-  ctx.fillText("◀ PLAYER 1 · SWARM LANE", MID - 18, 344);
+  ctx.fillText("◀ PLAYER 1 · SWARM LANE", MID - 18, 330);
   ctx.textAlign = "left"; ctx.fillStyle = PCOL[1];
-  ctx.fillText("HEAVY LANE · PLAYER 2 ▶", MID + 18, 344);
+  ctx.fillText("HEAVY LANE · PLAYER 2 ▶", MID + 18, 330);
   ctx.fillStyle = "#b77bff";
-  ctx.beginPath(); ctx.arc(MID, 340, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(MID, 326, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Difficulty picker
+  const D = DIFFICULTIES[difficulty];
+  ctx.save();
+  ctx.shadowColor = D.color; ctx.shadowBlur = 12;
+  drawCenteredText(D.label, 379, 17, D.color, 900);
+  ctx.restore();
+  drawCenteredText(D.desc, 406, 10, "#9aa5c9", 500);
 
   menuButtons().forEach(drawMenuButton);
 
-  if (best > 0) drawCenteredText("BEST: WAVE " + best, 584, 13, "#b77bff", 700);
-  drawCenteredText("2 PLAYERS  ·  SHARED SCREEN  ·  PRESS ENTER TO START", 652, 10, "#7f8bb3", 500);
+  if (best > 0) drawCenteredText("BEST ON " + D.label + ": WAVE " + best, 596, 12, "#b77bff", 700);
+  drawCenteredText("2 PLAYERS  ·  SHARED SCREEN  ·  ◀ ▶ DIFFICULTY  ·  ENTER TO START", 652, 10, "#7f8bb3", 500);
   if (Sound.supported && !Sound.unlocked) {
     ctx.globalAlpha = 0.6 + 0.4 * Math.sin(animT * 3);
     drawCenteredText("♪  CLICK ANYWHERE TO ENABLE SOUND", 628, 10, GOLD, 700);
@@ -201,7 +227,9 @@ function drawGameOver() {
   ctx.fillStyle = "rgba(3,5,12,0.82)"; ctx.fillRect(0, 0, W, H);
   drawCenteredText("CORE BREACHED", FH / 2 - 40, 40, "#ff5a5a", 900);
   drawCenteredText("You held the line together for " + state.wave + " waves", FH / 2 - 2, 16, "#e8ecff", 500);
-  drawCenteredText("BEST: WAVE " + best, FH / 2 + 26, 13, "#b77bff", 700);
+  const D = DIFFICULTIES[state.diff];
+  const record = !!state.newBest;
+  drawCenteredText((record ? "★ NEW BEST ON " : "BEST ON ") + D.label + ": WAVE " + bests[state.diff], FH / 2 + 26, 13, record ? GOLD : "#b77bff", 700);
   menuButtons().forEach(drawMenuButton);
   drawCenteredText("ENTER: REDEPLOY  ·  M: MAIN MENU", FH / 2 + 134, 10, "#7f8bb3", 500);
 }

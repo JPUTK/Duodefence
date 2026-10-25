@@ -2,7 +2,6 @@
 // All sound is synthesized with the Web Audio API, so there are no audio files.
 //   Sound.play(name, x)  - play a sound effect (x = screen position, used for left/right panning)
 //   Sound.setMode(mode)  - switch the music: "menu", "game" or "over"
-// Also wires up the Settings panel (music / SFX volume and mute), saved in the browser.
 // Loaded as a plain <script>; files share globals and load in the order listed in index.html.
 
 const Sound = (() => {
@@ -246,65 +245,3 @@ const Sound = (() => {
 
 // Start audio on the first click or key press anywhere on the page
 ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, () => Sound.unlock(), { once: false }));
-
-// =====================================================================
-// SETTINGS PANEL
-// =====================================================================
-let settingsOpen = false, pausedBySettings = false;
-
-function openSettings() {
-  const el = document.getElementById("settings");
-  if (!el || settingsOpen) return;
-  settingsOpen = true;
-  el.hidden = false;
-  // pause a running game while the panel is open
-  if (typeof screen !== "undefined" && screen !== "title" && !state.over && !state.paused) {
-    state.paused = true; pausedBySettings = true;
-  }
-  syncSettingsUI();
-}
-
-function closeSettings() {
-  const el = document.getElementById("settings");
-  if (!el || !settingsOpen) return;
-  settingsOpen = false;
-  el.hidden = true;
-  if (pausedBySettings) { state.paused = false; pausedBySettings = false; }
-}
-
-function syncSettingsUI() {
-  const s = Sound.settings;
-  [["music", "musicMuted"], ["sfx", "sfxMuted"]].forEach(([key, muteKey]) => {
-    const slider = document.getElementById(key + "Vol");
-    const val = document.getElementById(key + "Val");
-    const btn = document.getElementById(key + "Mute");
-    if (!slider) return;
-    slider.value = s[key];
-    val.textContent = s[muteKey] ? "OFF" : s[key] + "%";
-    btn.textContent = s[muteKey] ? "UNMUTE" : "MUTE";
-    btn.classList.toggle("on", s[muteKey]);
-    slider.closest(".row").classList.toggle("muted", s[muteKey]);
-  });
-}
-
-(function wireSettings() {
-  if (!document.getElementById("settings")) return;
-  [["music", "musicMuted"], ["sfx", "sfxMuted"]].forEach(([key, muteKey]) => {
-    const slider = document.getElementById(key + "Vol");
-    slider.addEventListener("input", () => {
-      Sound.settings[key] = +slider.value;
-      Sound.settings[muteKey] = false;
-      Sound.applyVolumes(); Sound.save(); syncSettingsUI();
-    });
-    if (key === "sfx") slider.addEventListener("change", () => Sound.play("upgrade"));
-    document.getElementById(key + "Mute").addEventListener("click", () => {
-      Sound.settings[muteKey] = !Sound.settings[muteKey];
-      Sound.applyVolumes(); Sound.save(); syncSettingsUI();
-    });
-  });
-  document.getElementById("settingsClose").addEventListener("click", closeSettings);
-  document.getElementById("settings").addEventListener("click", e => {
-    if (e.target.id === "settings") closeSettings(); // click outside the card
-  });
-  syncSettingsUI();
-})();
