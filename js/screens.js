@@ -1,14 +1,16 @@
 // screens.js
-// Title screen (with a live demo battle behind it) and the game-over menu.
+// Title screen (with a live demo battle behind it), the Mission Setup screen
+// (map and difficulty), and the game-over menu.
 // Loaded as a plain <script>; files share globals and load in the order listed in index.html.
 
-let screen = "title"; // "title", "tutorial" or "playing"
-let demoLayout = null; // turret positions for the demo, worked out once
+let screen = "title"; // "title", "maps", "tutorial" or "playing"
+const isMenuScreen = () => screen === "title" || screen === "maps";
+const demoLayouts = {}; // turret positions for each map's demo, worked out once
 
 function setScreen(s) {
   screen = s;
   const controls = document.querySelector(".controls");
-  if (controls) controls.style.visibility = s === "title" ? "hidden" : "visible";
+  if (controls) controls.style.visibility = isMenuScreen() ? "hidden" : "visible";
 }
 
 // =====================================================================
@@ -28,14 +30,24 @@ function goToMenu() {
   Sound.setMode("menu");
 }
 
+function goToMapSelect() {
+  setScreen("maps");
+}
+
+function selectMap(id) {
+  if (MAP.id === id) return;
+  loadMap(id);
+  startDemo(); // show the newly picked map behind the menu
+}
+
 // Builds a strong pre-made defense on both sides and lets the waves roll,
 // so the title screen shows the game being played.
 function startDemo() {
   reset();
   state.players.forEach(p => { p.core = 9999; p.credits = 0; });
   state.nextWaveIn = 2;
-  if (!demoLayout) demoLayout = planDemoLayout();
-  for (const d of demoLayout) {
+  if (!demoLayouts[MAP.id]) demoLayouts[MAP.id] = planDemoLayout();
+  for (const d of demoLayouts[MAP.id]) {
     const hybrid = !!TYPES[d.type].parts;
     state.towers.push({
       type: d.type, owner: d.owner, level: hybrid ? 1 : 3, x: d.x, y: d.y,
@@ -96,13 +108,23 @@ function updateDemo(dt) {
 function menuButtons() {
   if (screen === "title") {
     return [
-      { id: "diff-prev", label: "◀", x: MID - 130, y: 356, w: 36, h: 34, arrow: true },
-      { id: "diff-next", label: "", x: MID - 90, y: 356, w: 180, h: 34, hidden: true },
-      { id: "diff-next", label: "▶", x: MID + 94, y: 356, w: 36, h: 34, arrow: true },
-      { id: "start", label: "START GAME", x: MID - 130, y: 420, w: 260, h: 50, primary: true },
-      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 480, w: 260, h: 40 },
-      { id: "settings", label: "SETTINGS", x: MID - 130, y: 528, w: 260, h: 40 }
+      { id: "start", label: "START GAME", x: MID - 130, y: 380, w: 260, h: 52, primary: true },
+      { id: "howto", label: "HOW TO PLAY", x: MID - 130, y: 446, w: 260, h: 42 },
+      { id: "settings", label: "SETTINGS", x: MID - 130, y: 498, w: 260, h: 42 }
     ];
+  }
+  if (screen === "maps") {
+    const cards = MAPS.map((m, i) => ({
+      id: "map:" + m.id, map: m, card: true,
+      x: i % 2 ? 490 : 40, y: i < 2 ? 100 : 288, w: 430, h: 174
+    }));
+    return cards.concat([
+      { id: "diff-prev", label: "◀", x: MID - 130, y: 486, w: 36, h: 34, arrow: true },
+      { id: "diff-next", label: "", x: MID - 90, y: 486, w: 180, h: 34, hidden: true },
+      { id: "diff-next", label: "▶", x: MID + 94, y: 486, w: 36, h: 34, arrow: true },
+      { id: "deploy", label: "DEPLOY", x: MID - 130, y: 572, w: 260, h: 54, primary: true },
+      { id: "back", label: "◀ BACK", x: 40, y: 578, w: 150, h: 42 }
+    ]);
   }
   if (state.over) {
     const y = FH / 2 + 60;
@@ -120,7 +142,10 @@ function menuButtonAt(x, y) {
 
 function menuAction(id) {
   Sound.play("ui");
-  if (id === "start" || id === "redeploy") startGame();
+  if (id === "start") goToMapSelect();
+  else if (id === "deploy" || id === "redeploy") startGame();
+  else if (id === "back") setScreen("title");
+  else if (id.startsWith("map:")) selectMap(id.slice(4));
   else if (id === "menu") goToMenu();
   else if (id === "howto") startTutorial();
   else if (id === "settings") openSettings();
@@ -130,6 +155,7 @@ function menuAction(id) {
 
 function drawMenuButton(b) {
   if (b.hidden) return;
+  if (b.card) { drawMapCard(b); return; }
   const hover = inRect(mouse.x, mouse.y, b);
   if (b.arrow) {
     const c = DIFFICULTIES[difficulty].color;
@@ -201,18 +227,12 @@ function drawTitle() {
   ctx.fillStyle = "#b77bff";
   ctx.beginPath(); ctx.arc(MID, 326, 3, 0, Math.PI * 2); ctx.fill();
 
-  // Difficulty picker
-  const D = DIFFICULTIES[difficulty];
-  ctx.save();
-  ctx.shadowColor = D.color; ctx.shadowBlur = 12;
-  drawCenteredText(D.label, 379, 17, D.color, 900);
-  ctx.restore();
-  drawCenteredText(D.desc, 406, 10, "#9aa5c9", 500);
-
   menuButtons().forEach(drawMenuButton);
 
-  if (best > 0) drawCenteredText("BEST ON " + D.label + ": WAVE " + best, 596, 12, "#b77bff", 700);
-  drawCenteredText("2 PLAYERS  ·  SHARED SCREEN  ·  ◀ ▶ DIFFICULTY  ·  ENTER TO START", 652, 10, "#7f8bb3", 500);
+  const D = DIFFICULTIES[difficulty];
+  drawCenteredText(MAP.name + "  ·  " + D.label, 572, 11, "#9aa5c9", 700);
+  if (best > 0) drawCenteredText("BEST: WAVE " + best, 592, 12, "#b77bff", 700);
+  drawCenteredText("2 PLAYERS  ·  SHARED SCREEN  ·  PRESS ENTER TO START", 652, 10, "#7f8bb3", 500);
   if (Sound.supported && !Sound.unlocked) {
     ctx.globalAlpha = 0.6 + 0.4 * Math.sin(animT * 3);
     drawCenteredText("♪  CLICK ANYWHERE TO ENABLE SOUND", 628, 10, GOLD, 700);
@@ -229,7 +249,70 @@ function drawGameOver() {
   drawCenteredText("You held the line together for " + state.wave + " waves", FH / 2 - 2, 16, "#e8ecff", 500);
   const D = DIFFICULTIES[state.diff];
   const record = !!state.newBest;
-  drawCenteredText((record ? "★ NEW BEST ON " : "BEST ON ") + D.label + ": WAVE " + bests[state.diff], FH / 2 + 26, 13, record ? GOLD : "#b77bff", 700);
+  const where = MAPS.find(m => m.id === state.mapId).name + " · " + D.label;
+  drawCenteredText((record ? "★ NEW BEST ON " : "BEST ON ") + where + ": WAVE " + (bests[bestKey(state.mapId, state.diff)] || 0),
+    FH / 2 + 26, 13, record ? GOLD : "#b77bff", 700);
   menuButtons().forEach(drawMenuButton);
   drawCenteredText("ENTER: REDEPLOY  ·  M: MAIN MENU", FH / 2 + 134, 10, "#7f8bb3", 500);
+}
+
+// =====================================================================
+// MISSION SETUP (map + difficulty)
+// =====================================================================
+function drawMapCard(b) {
+  const m = b.map, sel = MAP.id === m.id, hover = inRect(mouse.x, mouse.y, b);
+  ctx.save();
+  ctx.fillStyle = sel ? "rgba(56,225,255,0.10)" : hover ? "rgba(255,255,255,0.07)" : "rgba(7,10,24,0.85)";
+  ctx.strokeStyle = sel ? PCOL[0] : hover ? "#dfe6ff" : "rgba(255,255,255,0.2)";
+  ctx.lineWidth = sel ? 2 : 1;
+  ctx.shadowColor = PCOL[0]; ctx.shadowBlur = sel ? 18 : 0;
+  roundRect(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // preview
+  const tx = b.x + 12, ty = b.y + 12, tw = 240, th = 150;
+  ctx.save();
+  roundRect(ctx, tx, ty, tw, th, 6); ctx.clip();
+  ctx.drawImage(mapThumb(m), tx, ty, tw, th);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 1;
+  roundRect(ctx, tx, ty, tw, th, 6); ctx.stroke();
+
+  // text
+  const x = b.x + 266, w = b.w - 266 - 14;
+  ctx.textAlign = "left";
+  ctx.fillStyle = sel ? "#ffffff" : "#dfe6ff"; ctx.font = "900 15px " + FONT;
+  ctx.fillText(m.name, x, b.y + 32);
+  ctx.fillStyle = "#9aa5c9"; ctx.font = "500 11px " + FONT;
+  wrapText(m.desc, w).forEach((line, i) => ctx.fillText(line, x, b.y + 54 + i * 16));
+  const mb = bests[bestKey(m.id)] || 0;
+  ctx.fillStyle = mb ? "#b77bff" : "#5b6588"; ctx.font = "700 10px " + FONT;
+  ctx.fillText(mb ? "BEST: WAVE " + mb : "NOT YET PLAYED", x, b.y + b.h - 18);
+  if (sel) {
+    ctx.fillStyle = "rgba(7,10,24,0.9)"; ctx.strokeStyle = PCOL[0]; ctx.lineWidth = 1.5;
+    roundRect(ctx, x, b.y + b.h - 56, 96, 22, 11); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = PCOL[0]; ctx.font = "900 10px " + FONT; ctx.textAlign = "center";
+    ctx.fillText("✓ SELECTED", x + 48, b.y + b.h - 41);
+  }
+  ctx.restore();
+}
+
+function drawMapSelect() {
+  ctx.fillStyle = "#05070f"; ctx.fillRect(0, FH, W, H - FH);
+  ctx.fillStyle = "rgba(3,5,12,0.86)"; ctx.fillRect(0, 0, W, H);
+
+  drawCenteredText("MISSION SETUP", 52, 26, "#ffffff", 900);
+  drawCenteredText("Choose your battlefield and difficulty", 76, 11, "#9aa5c9", 500);
+
+  menuButtons().forEach(drawMenuButton);
+
+  const D = DIFFICULTIES[difficulty];
+  ctx.save();
+  ctx.shadowColor = D.color; ctx.shadowBlur = 12;
+  drawCenteredText(D.label, 509, 17, D.color, 900);
+  ctx.restore();
+  drawCenteredText(D.desc, 540, 10, "#9aa5c9", 500);
+  drawCenteredText("DIFFICULTY", 478, 9, "#7f8bb3", 700);
+
+  drawCenteredText("← → MAP  ·  ↑ ↓ DIFFICULTY  ·  ENTER TO DEPLOY  ·  ESC TO GO BACK", 664, 10, "#7f8bb3", 500);
 }

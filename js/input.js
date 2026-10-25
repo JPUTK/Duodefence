@@ -18,7 +18,7 @@ function panelHit(x, y) {
   return null;
 }
 
-const inMenu = () => screen === "title" || state.over;
+const inMenu = () => isMenuScreen() || state.over;
 
 cvs.addEventListener("mousemove", evt => {
   mouse = canvasPos(evt);
@@ -94,9 +94,19 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (screen === "title") {
-    if (k === "Enter") startGame();
-    if (k === "ArrowLeft") { cycleDifficulty(-1); Sound.play("ui"); }
-    if (k === "ArrowRight") { cycleDifficulty(1); Sound.play("ui"); }
+    if (k === "Enter") { Sound.play("ui"); goToMapSelect(); }
+    return;
+  }
+  if (screen === "maps") {
+    const i = MAPS.indexOf(MAP);
+    if (k === "ArrowLeft" || k === "ArrowRight") {
+      e.preventDefault();
+      selectMap(MAPS[(i + (k === "ArrowLeft" ? -1 : 1) + MAPS.length) % MAPS.length].id);
+      Sound.play("ui");
+    }
+    if (k === "ArrowUp" || k === "ArrowDown") { e.preventDefault(); cycleDifficulty(k === "ArrowUp" ? -1 : 1); Sound.play("ui"); }
+    if (k === "Enter") { Sound.play("ui"); startGame(); }
+    if (k === "Escape") setScreen("title");
     return;
   }
   if (state.over) {

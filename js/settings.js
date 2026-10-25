@@ -10,7 +10,7 @@ function openSettings() {
   settingsOpen = true;
   el.hidden = false;
   // pause a running game while the panel is open
-  if (screen !== "title" && !state.over && !state.paused) {
+  if (!isMenuScreen() && !state.over && !state.paused) {
     state.paused = true; pausedBySettings = true;
   }
   syncSettingsUI();

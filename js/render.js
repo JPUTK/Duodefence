@@ -62,22 +62,51 @@ bg.width = W; bg.height = FH;
 })();
 
 // ----- Lanes (drawn once, layered over the rift so they act as bridges) -----
+// Rebuilt whenever a different map is loaded (see loadMap in maps.js)
 const laneLayer = document.createElement("canvas");
 laneLayer.width = W; laneLayer.height = FH;
-(function () {
-  const g = laneLayer.getContext("2d");
+
+function drawLanePaths(g, paths) {
   g.lineCap = "round"; g.lineJoin = "round";
-  LANES.forEach(l => {
-    const c = PCOL[l.guard];
+  paths.forEach((path, i) => {
+    const c = PCOL[i];
     g.beginPath();
-    l.path.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+    path.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y));
     g.shadowColor = c; g.shadowBlur = 18; g.globalAlpha = 0.5;
     g.strokeStyle = c; g.lineWidth = 40; g.stroke();
     g.shadowBlur = 0; g.globalAlpha = 1;
     g.strokeStyle = "#0d1326"; g.lineWidth = 35; g.stroke();
     g.strokeStyle = "rgba(255,255,255,0.04)"; g.lineWidth = 18; g.stroke();
   });
-})();
+}
+
+function buildLaneLayer() {
+  const g = laneLayer.getContext("2d");
+  g.clearRect(0, 0, W, FH);
+  drawLanePaths(g, LANES.map(l => l.path));
+}
+buildLaneLayer();
+onMapLoad.push(buildLaneLayer);
+
+// Small preview image of a map, for the map select screen (cached)
+const mapThumbs = {};
+function mapThumb(m) {
+  if (mapThumbs[m.id]) return mapThumbs[m.id];
+  const c = document.createElement("canvas");
+  c.width = W; c.height = FH;
+  const g = c.getContext("2d");
+  g.drawImage(bg, 0, 0);
+  g.fillStyle = "#03020a"; g.fillRect(MID - RIFT, 0, RIFT * 2, FH);
+  g.fillStyle = "rgba(150,90,255,0.5)"; g.fillRect(MID - RIFT, 0, 2, FH); g.fillRect(MID + RIFT - 2, 0, 2, FH);
+  drawLanePaths(g, m.lanes);
+  m.cores.forEach((core, i) => {
+    g.fillStyle = PCOL[i]; g.shadowColor = PCOL[i]; g.shadowBlur = 20;
+    g.beginPath(); g.arc(core.x, core.y, 24, 0, Math.PI * 2); g.fill();
+    g.shadowBlur = 0; g.fillStyle = "#0a1022";
+    g.beginPath(); g.arc(core.x, core.y, 12, 0, Math.PI * 2); g.fill();
+  });
+  return (mapThumbs[m.id] = c);
+}
 
 function drawRift() {
   ctx.fillStyle = "#03020a";
@@ -130,9 +159,10 @@ function drawLaneFlow() {
   ctx.globalAlpha = 1;
 }
 
-function drawPortal(x, y) {
+function drawPortal({ x, y, vertical }) {
   ctx.save();
   ctx.translate(x, y);
+  if (vertical) ctx.rotate(Math.PI / 2);
   ctx.globalCompositeOperation = "lighter";
   for (let k = 0; k < 3; k++) {
     ctx.strokeStyle = "rgba(255,150,60," + (0.55 - k * 0.15) + ")";
@@ -485,8 +515,7 @@ function draw() {
   drawRift();
   ctx.drawImage(laneLayer, 0, 0);
   drawLaneFlow();
-  drawPortal(PATH_A[0][0], 3);
-  drawPortal(PATH_B[0][0], FH - 3);
+  MAP.portals.forEach(drawPortal);
 
   for (const f of state.fields) {
     ctx.globalAlpha = Math.min(1, f.life / f.max * 2) * 0.5;
@@ -537,6 +566,7 @@ function draw() {
   ctx.restore(); // end screen shake
 
   if (screen === "title") { drawTitle(); return; }
+  if (screen === "maps") { drawMapSelect(); return; }
 
   // HUD strip
   ctx.fillStyle = "#05070f"; ctx.fillRect(0, FH, W, H - FH);
@@ -550,7 +580,7 @@ function draw() {
   const status = pending ? "INCOMING " + pending
     : isFinite(state.nextWaveIn) ? "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s" : "PRACTICE";
   drawCenteredText(status, 38, 10, "rgba(232,236,255,0.7)", 500);
-  if (screen === "playing") drawCenteredText(state.D.label, 52, 8, state.D.color, 700);
+  if (screen === "playing") drawCenteredText(MAP.name + " · " + state.D.label, 52, 8, state.D.color, 700);
 
   drawHover();
 

@@ -10,7 +10,7 @@ function loop(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   animT += dt;
-  if (screen === "title") updateDemo(dt);
+  if (isMenuScreen()) updateDemo(dt);
   else if (screen === "tutorial") updateTutorial(dt);
   else for (let i = 0; i < speedMul; i++) update(dt);
   draw();

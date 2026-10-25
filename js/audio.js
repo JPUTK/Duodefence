@@ -137,7 +137,7 @@ const Sound = (() => {
 
   function play(name, x) {
     if (!ac || ac.state !== "running" || !SFX[name]) return;
-    if (typeof screen !== "undefined" && screen === "title" && name !== "ui") return; // demo battle stays quiet
+    if (typeof isMenuScreen === "function" && isMenuScreen() && name !== "ui") return; // demo battle stays quiet
     if (settings.sfxMuted || settings.sfx === 0) return;
     const now = ac.currentTime;
     if (LIMIT[name] && now - (lastPlayed[name] || 0) < LIMIT[name]) return;

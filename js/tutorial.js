@@ -39,7 +39,7 @@ const TUT_STEPS = [
     onEnter: () => {
       state.wave = 1;
       for (let li = 0; li < 2; li++) {
-        for (let i = 0; i < 5; i++) state.queues[li].push(makeSpec("grunt", 40, 6, 48 * PROFILES[li].spd, 1));
+        for (let i = 0; i < 5; i++) state.queues[li].push(makeSpec("grunt", 40, 6, 48 * PROFILES[li].spd * LANES[li].speedScale, 1));
         state.intervals[li] = 1.2;
         state.timers[li] = 0.5;
       }
