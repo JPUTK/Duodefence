@@ -2,7 +2,7 @@
 // Title screen (with a live demo battle behind it) and the game-over menu.
 // Loaded as a plain <script>; files share globals and load in the order listed in index.html.
 
-let screen = "title"; // "title" or "playing"
+let screen = "title"; // "title", "tutorial" or "playing"
 let demoLayout = null; // turret positions for the demo, worked out once
 
 function setScreen(s) {
@@ -115,10 +115,7 @@ function menuButtonAt(x, y) {
 function menuAction(id) {
   if (id === "start" || id === "redeploy") startGame();
   else if (id === "menu") goToMenu();
-  else if (id === "howto") {
-    const help = document.querySelector(".help");
-    if (help) help.scrollIntoView({ behavior: "smooth" });
-  }
+  else if (id === "howto") startTutorial();
 }
 
 function drawMenuButton(b) {

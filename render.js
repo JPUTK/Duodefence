@@ -547,7 +547,8 @@ function draw() {
   // Wave readout
   drawCenteredText("WAVE " + state.wave, 22, 14, "#e8ecff", 900);
   const pending = state.queues[0].length + state.queues[1].length;
-  const status = pending ? "INCOMING " + pending : "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s";
+  const status = pending ? "INCOMING " + pending
+    : isFinite(state.nextWaveIn) ? "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s" : "PRACTICE";
   drawCenteredText(status, 38, 10, "rgba(232,236,255,0.7)", 500);
 
   drawHover();
@@ -558,6 +559,8 @@ function draw() {
     drawCenteredText(state.banner.text, FH / 2 + 6, 22, state.banner.color, 900);
     ctx.globalAlpha = 1;
   }
+
+  if (screen === "tutorial") drawTutorial();
 
   if (state.paused && !state.over) {
     ctx.fillStyle = "rgba(3,5,12,0.55)"; ctx.fillRect(0, 0, W, FH);
