@@ -9,7 +9,25 @@ const PCOL = ["#38e1ff", "#ff4fd8"];    // Player 1 cyan, Player 2 magenta
 const PRGB = ["56,225,255", "255,79,216"];
 const HOSTILE = "#ff9f2e";
 const GOLD = "#ffd34d";
-const CORE_MAX = 30;
+
+// ----- Difficulty levels -----
+//   hp:      multiplier on drone health
+//   growth:  how much tougher drones get each wave (1.2 = +20% per wave)
+//   credits: starting credits for each player
+//   core:    core health
+//   reward:  multiplier on credits earned per kill
+//   waveGap: seconds between waves
+const DIFFICULTIES = {
+  easy:      { label: "EASY",      color: "#5dff9d", hp: 0.7,  growth: 1.155, credits: 200, core: 40, reward: 1.15, waveGap: 30,
+               desc: "Weaker drones, sturdier cores, more time to build" },
+  normal:    { label: "NORMAL",    color: "#38e1ff", hp: 1,    growth: 1.2,  credits: 150, core: 30, reward: 1,    waveGap: 25,
+               desc: "The intended challenge" },
+  hard:      { label: "HARD",      color: "#ffb03b", hp: 1.3,  growth: 1.23, credits: 130, core: 20, reward: 0.9,  waveGap: 22,
+               desc: "Tougher drones, fragile cores, less time" },
+  nightmare: { label: "NIGHTMARE", color: "#ff4d6d", hp: 1.25, growth: 1.27, credits: 120, core: 12, reward: 0.85, waveGap: 18,
+               desc: "Only for perfectly coordinated teams" }
+};
+const DIFF_ORDER = ["easy", "normal", "hard", "nightmare"];
 
 // Lane A: long serpentine through Player 1's side, ends at Player 2's core.
 const PATH_A = [[60,-40],[60,500],[180,500],[180,100],[300,100],[300,540],[600,540]];
