@@ -39,7 +39,10 @@ cvs.addEventListener("click", evt => {
 
   const ph = panelHit(x, y);
   if (ph) {
-    if (ph.btn) ph.btn.type === "give" ? give(ph.player) : (state.players[ph.player].sel = ph.btn.type);
+    if (ph.btn) {
+      if (ph.btn.type === "give") give(ph.player);
+      else { state.players[ph.player].sel = ph.btn.type; Sound.play("ui"); }
+    }
     return;
   }
   if (y > FH) return;
@@ -86,6 +89,10 @@ cvs.addEventListener("contextmenu", evt => {
 
 document.addEventListener("keydown", e => {
   const k = e.key;
+  if (settingsOpen) {
+    if (k === "Escape") closeSettings();
+    return;
+  }
   if (screen === "title") {
     if (k === "Enter") startGame();
     return;
@@ -97,7 +104,7 @@ document.addEventListener("keydown", e => {
   }
   KEYS.forEach((keys, pi) => {
     const idx = keys.indexOf(k);
-    if (idx >= 0) state.players[pi].sel = ORDER[idx];
+    if (idx >= 0) { state.players[pi].sel = ORDER[idx]; Sound.play("ui"); }
   });
   if (k === " ") { e.preventDefault(); togglePause(); }
   if ((k === "n" || k === "N") && screen === "playing") startWave(true);
@@ -118,4 +125,5 @@ document.getElementById("speed").onclick = e => {
   e.target.blur();
 };
 document.getElementById("restart").onclick = e => { startGame(); e.target.blur(); };
-document.getElementById("menu").onclick = e => { goToMenu(); e.target.blur(); };
+document.getElementById("menu").onclick = e => { closeSettings(); goToMenu(); e.target.blur(); };
+document.getElementById("openSettings").onclick = e => { openSettings(); e.target.blur(); };
