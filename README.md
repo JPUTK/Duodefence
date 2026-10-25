@@ -4,7 +4,7 @@ A two-player co-op tower defense game where you don't defend your own base — *
 
 A glowing rift splits the map in two. The drones marching through *your* side are headed for *your ally's* core, and the drones on their side are coming for yours. Your turrets can only fire on the lane you guard, so you're each other's only line of defense. If either core falls, you both lose.
 
-**▶ Play it here:** https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/
+**▶ Play it here:** https://JPUTK.github.io/Duodefence/
 
 ---
 
