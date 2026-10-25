@@ -11,6 +11,7 @@ function loop(now) {
   last = now;
   animT += dt;
   if (screen === "title") updateDemo(dt);
+  else if (screen === "tutorial") updateTutorial(dt);
   else for (let i = 0; i < speedMul; i++) update(dt);
   draw();
   requestAnimationFrame(loop);

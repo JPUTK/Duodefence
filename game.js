@@ -14,7 +14,7 @@ function reset() {
     ],
     wave: 0, queues: [[], []], timers: [0, 0], intervals: [1, 1], nextWaveIn: 15,
     enemies: [], towers: [], beams: [], shots: [], pulses: [], fields: [], parts: [], floaters: [],
-    banner: null, shake: 0, over: false, paused: false
+    banner: null, shake: 0, over: false, paused: false, gives: 0
   };
 }
 
@@ -370,5 +370,6 @@ function give(from) {
   if (p.credits < GIVE_AMOUNT) { floater(CORES[from].x, CORES[from].y - 52, "NOT ENOUGH", "#ff5a5a"); return; }
   p.credits -= GIVE_AMOUNT;
   state.players[to].credits += GIVE_AMOUNT;
+  state.gives++;
   floater(CORES[to].x, CORES[to].y - 52, "+" + GIVE_AMOUNT + " FROM ALLY", PCOL[from]);
 }

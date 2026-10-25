@@ -22,7 +22,9 @@ const inMenu = () => screen === "title" || state.over;
 
 cvs.addEventListener("mousemove", evt => {
   mouse = canvasPos(evt);
-  cvs.style.cursor = inMenu() ? (menuButtonAt(mouse.x, mouse.y) ? "pointer" : "default") : "crosshair";
+  if (inMenu()) cvs.style.cursor = menuButtonAt(mouse.x, mouse.y) ? "pointer" : "default";
+  else if (screen === "tutorial" && tutorialButtonAt(mouse.x, mouse.y)) cvs.style.cursor = "pointer";
+  else cvs.style.cursor = "crosshair";
 });
 cvs.addEventListener("mouseleave", () => { mouse = { x: -100, y: -100 }; });
 
@@ -33,6 +35,7 @@ cvs.addEventListener("click", evt => {
     if (b) menuAction(b.id);
     return;
   }
+  if (screen === "tutorial" && tutorialClick(x, y)) return;
 
   const ph = panelHit(x, y);
   if (ph) {
@@ -97,7 +100,7 @@ document.addEventListener("keydown", e => {
     if (idx >= 0) state.players[pi].sel = ORDER[idx];
   });
   if (k === " ") { e.preventDefault(); togglePause(); }
-  if (k === "n" || k === "N") startWave(true);
+  if ((k === "n" || k === "N") && screen === "playing") startWave(true);
   if (k === "Escape") state.players.forEach(p => p.mergeSel = null);
 });
 
@@ -107,7 +110,7 @@ function togglePause() {
   document.getElementById("pause").textContent = state.paused ? "Resume" : "Pause";
 }
 
-document.getElementById("callWave").onclick = e => { if (!inMenu()) startWave(true); e.target.blur(); };
+document.getElementById("callWave").onclick = e => { if (screen === "playing" && !state.over) startWave(true); e.target.blur(); };
 document.getElementById("pause").onclick = e => { togglePause(); e.target.blur(); };
 document.getElementById("speed").onclick = e => {
   speedMul = speedMul === 1 ? 2 : 1;
