@@ -146,7 +146,7 @@ function drawPortal(x, y) {
 
 function drawCore(i) {
   const { x, y } = CORES[i], c = PCOL[i], p = state.players[i];
-  const pct = p.core / CORE_MAX, pulse = 0.5 + 0.5 * Math.sin(animT * 3 + i);
+  const pct = p.core / state.coreMax, pulse = 0.5 + 0.5 * Math.sin(animT * 3 + i);
 
   ctx.save();
   ctx.translate(x, y);
@@ -346,8 +346,8 @@ function drawPanel(i) {
   ctx.fillText("PLAYER " + (i + 1), P.x + 12, P.y + 24);
   ctx.fillStyle = "#e8ecff"; ctx.font = "700 13px " + FONT;
   ctx.fillText(p.credits + " CR", P.x + 12, P.y + 46);
-  ctx.fillStyle = p.core / CORE_MAX > 0.25 ? "#aab4d8" : "#ff5a5a"; ctx.font = "500 11px " + FONT;
-  ctx.fillText("CORE " + p.core + " / " + CORE_MAX, P.x + 12, P.y + 66);
+  ctx.fillStyle = p.core / state.coreMax > 0.25 ? "#aab4d8" : "#ff5a5a"; ctx.font = "500 11px " + FONT;
+  ctx.fillText("CORE " + p.core + " / " + state.coreMax, P.x + 12, P.y + 66);
 
   panelButtons(i).forEach((b, k) => {
     const isGive = b.type === "give";
@@ -550,6 +550,7 @@ function draw() {
   const status = pending ? "INCOMING " + pending
     : isFinite(state.nextWaveIn) ? "NEXT IN " + Math.max(0, Math.ceil(state.nextWaveIn)) + "s" : "PRACTICE";
   drawCenteredText(status, 38, 10, "rgba(232,236,255,0.7)", 500);
+  if (screen === "playing") drawCenteredText(state.D.label, 52, 8, state.D.color, 700);
 
   drawHover();
 

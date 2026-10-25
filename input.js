@@ -95,6 +95,8 @@ document.addEventListener("keydown", e => {
   }
   if (screen === "title") {
     if (k === "Enter") startGame();
+    if (k === "ArrowLeft") { cycleDifficulty(-1); Sound.play("ui"); }
+    if (k === "ArrowRight") { cycleDifficulty(1); Sound.play("ui"); }
     return;
   }
   if (state.over) {

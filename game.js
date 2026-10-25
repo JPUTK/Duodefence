@@ -2,15 +2,42 @@
 // Game state and rules: waves, damage, the update step, and player actions.
 // Loaded as a plain <script>; files share globals and load in the order listed in index.html.
 
-let state, speedMul = 1, animT = 0, best = 0;
+let state, speedMul = 1, animT = 0;
 let mouse = { x: -100, y: -100 };
-try { best = parseInt(localStorage.getItem("riftBest") || "0", 10) || 0; } catch (e) {}
+
+// ----- Difficulty and best waves (saved in the browser) -----
+let difficulty = "normal";
+let bests = { easy: 0, normal: 0, hard: 0, nightmare: 0 };
+try {
+  const d = localStorage.getItem("riftDifficulty");
+  if (DIFFICULTIES[d]) difficulty = d;
+  Object.assign(bests, JSON.parse(localStorage.getItem("riftBests") || "{}"));
+  // carry over a best score saved before difficulty levels existed
+  const old = parseInt(localStorage.getItem("riftBest") || "0", 10) || 0;
+  if (old > bests.normal) bests.normal = old;
+} catch (e) {}
+let best = bests[difficulty];
+
+function setDifficulty(d) {
+  if (!DIFFICULTIES[d]) return;
+  difficulty = d;
+  best = bests[d];
+  try { localStorage.setItem("riftDifficulty", d); } catch (e) {}
+  if (typeof syncSettingsUI === "function") syncSettingsUI();
+}
+
+function cycleDifficulty(dir) {
+  const i = DIFF_ORDER.indexOf(difficulty);
+  setDifficulty(DIFF_ORDER[(i + dir + DIFF_ORDER.length) % DIFF_ORDER.length]);
+}
 
 function reset() {
+  const D = DIFFICULTIES[difficulty];
   state = {
+    diff: difficulty, D, coreMax: D.core,
     players: [
-      { credits: 150, core: CORE_MAX, sel: "laser", mergeSel: null },
-      { credits: 150, core: CORE_MAX, sel: "laser", mergeSel: null }
+      { credits: D.credits, core: D.core, sel: "laser", mergeSel: null },
+      { credits: D.credits, core: D.core, sel: "laser", mergeSel: null }
     ],
     wave: 0, queues: [[], []], timers: [0, 0], intervals: [1, 1], nextWaveIn: 15,
     enemies: [], towers: [], beams: [], shots: [], pulses: [], fields: [], parts: [], floaters: [],
@@ -80,8 +107,9 @@ function makeSpec(kind, hp, rew, spd, w) {
 function buildWave(w) {
   const surge = surgeLane(w);
   const base = 6 + 2 * w;
-  const hpUnit = 30 * Math.pow(1.2, w - 1);
-  const rewUnit = 4 + w / 2;
+  const D = state.D;
+  const hpUnit = 30 * D.hp * Math.pow(D.growth, w - 1);
+  const rewUnit = (4 + w / 2) * D.reward;
   const spd = Math.min(42 + 2.5 * w, 100);
   const duration = 0.75 * base;
 
@@ -114,7 +142,7 @@ function startWave(early) {
   }
   state.wave++;
   const surge = buildWave(state.wave);
-  state.nextWaveIn = 25;
+  state.nextWaveIn = state.D.waveGap;
   let text = "WAVE " + state.wave, color = "#ffffff";
   if (surge >= 0) { text += " · SURGE ON " + LANES[surge].label; color = PCOL[surge]; }
   if (state.wave % 5 === 0) { text += " · BOSSES"; color = HOSTILE; }
@@ -204,9 +232,10 @@ function update(dt) {
         state.over = true;
         Sound.play("gameover");
         Sound.setMode("over");
-        if (state.wave > best) {
-          best = state.wave;
-          try { localStorage.setItem("riftBest", String(best)); } catch (err) {}
+        if (state.diff === difficulty && state.wave > best) {
+          best = bests[difficulty] = state.wave;
+          state.newBest = true;
+          try { localStorage.setItem("riftBests", JSON.stringify(bests)); } catch (err) {}
         }
       }
     }
